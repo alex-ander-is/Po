@@ -1,0 +1,13 @@
+body
+{
+	padding: 0 1rem;
+}
+
+#pie-container
+{
+	float: right;
+	margin-top: 0;
+	padding-top: 0;
+	width: 500px;
+	height: 400px;
+}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<!--
+ Copyright (c) 2014, 2020, Oracle and/or its affiliates.
+ Licensed under The Universal Permissive License (UPL), Version 1.0
+ as shown at https://oss.oracle.com/licenses/upl/
+ -->
+<html lang="en-us">
+	<head>
+		<title>Po</title>
+		<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<meta name="apple-mobile-web-app-title" content="Oracle JET">
+		<link rel="stylesheet" href="css/style.css" />
+		<!-- injector:theme -->
+		<link rel="stylesheet" href="css/libs/oj/v9.2.0/redwood/oj-redwood-min.css" id="css" />
+		<!-- endinjector -->
+	</head>
+	<body>
+		<h1 class="oj-typography-heading-s" id="h1">Phở Kémons</h1>
+		<div id='pie-container'>
+			<oj-chart id="pie"
+					type="pie"
+					data="[[dataProviderPie]]"
+					hover-behavior="dim">
+
+					<template slot='itemTemplate' data-oj-as='item'>
+						<!--
+						<oj-chart-item
+							value='[[item.data.weight]]'
+							group-id='[[ [] ]]'
+							series-id='[[item.data.name]]'>
+						</oj-chart-item>
+						-->
+					</template>
+			</oj-chart>
+		</div>
+
+		<div id='list-container'>
+			<oj-list-view
+				id="list"
+				aria-label="list"
+				data="[[dataProviderList]]"
+				class="demo-list-view oj-sm-padding-2x-vertical"
+				gridlines.item="visible"
+				selected="{{selectorSelectedItems}}"
+				selection-mode="multiple"
+			>
+				<template slot="itemTemplate" data-oj-as="item">
+				<li>
+					<oj-list-item-layout>
+						<oj-selector
+							aria-label="selector"
+							slot="selector"
+							selected-keys="{{selectorSelectedItems}}"
+							row-key="[[item.data.id]]"
+						>
+						</oj-selector>
+						<oj-avatar
+							slot="leading"
+							role="img"
+							size="xs"
+							initials="[[item.data.initials]]"
+							src="[[item.data.sprites.back_default]]"
+							:aria-label="[[item.data.name]]"
+							:title="[[item.data.name]]"
+						>
+						</oj-avatar>
+						<div class="demo-flex-display">
+							<div class="oj-sm-odd-cols-12 oj-md-odd-cols-2 oj-md-even-cols-4">
+								<div class="oj-flex">
+									<oj-bind-text class="oj-flex-item oj-sm-padding-2x-horizontal" value="[[item.data.id]]"></oj-bind-text>
+									<oj-bind-text class="oj-flex-item oj-sm-padding-2x-horizontal" value="[[item.data.name]]"></oj-bind-text>
+									<oj-bind-text class="oj-flex-item oj-sm-padding-2x-horizontal" value="[[item.data.height]]"></oj-bind-text>
+									<oj-bind-text class="oj-flex-item oj-sm-padding-2x-horizontal" value="[[item.data.weight]]"></oj-bind-text>
+									<oj-bind-text class="oj-flex-item oj-sm-padding-2x-horizontal" value="[[item.data.moves.length]]"></oj-bind-text>
+									<oj-bind-text class="oj-flex-item oj-sm-padding-2x-horizontal" value="[[item.data.types]]"></oj-bind-text>
+								</div>
+							</div>
+						</div>
+					</oj-list-item-layout>
+				</li>
+				</template>
+			</oj-list-view>
+
+		</div>
+		<script type="text/javascript" src="js/libs/require/require.js"></script>
+		<script type="text/javascript" src="js/main.js"></script>
+	</body>
+</html>
