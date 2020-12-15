@@ -59,54 +59,37 @@ require([
 	'knockout',
 	'ojs/ojbootstrap',
 	'ojs/ojarraydataprovider',
-	'ojs/ojknockout-keyset',
-	'ojs/ojresponsiveutils',
-	'ojs/ojresponsiveknockoututils',
-
+	'ojs/ojkeyset',
+	'ojs/ojknockout',
+	'ojs/ojtable',
 	'ojs/ojchart',
-	'ojs/ojknockout',
-	'ojs/ojarraydataprovider',
-	'ojs/ojavatar',
+
 	'ojs/ojbutton',
-	'ojs/ojknockout',
-	'ojs/ojlistitemlayout',
-	'ojs/ojlistview',
-	'ojs/ojselector',
-	'ojs/ojtoolbar'
+	'ojs/ojselectsingle',
+	'ojs/ojformlayout'
 	],
+
 	function (
 		ko,
 		Bootstrap,
 		ArrayDataProvider,
-		keySet,
-		ResponsiveUtils,
-		ResponsiveKnockoutUtils
+		KeySet,
 	) {
-		const dataPie = [{
-			'id': 0,
-			'series': 'Series 1',
-			'group': 'Group A',
-			'value': 25
-		},
-		{
-			'id': 1,
-			'series': 'Series 2',
-			'group': 'Group A',
-			'value': 75
-		}];
-
-		let dataList = [];
+		window.ko = ko;
 
 		const apiBasePath = 'https://pokeapi.co/api/v2';
 		const apiPokemon = '/pokemon';
 		const apiPokemonSpecies = '/pokemon-species';
-		// const listOfPokemons = '?offset=0&limit=5';
-		let elementH1;
-		let numPokemons = 5;
-		let numPokemonsTotal = 0;
-		let numFetchedPokemons = 0;
+		const numPokemons = 5;
+		const listElement = document.getElementById('list');
+		const pieElement = document.getElementById('pie');
 
-		function init() {
+		let elementH1;
+		let numFetchedPokemons = 0;
+		let pokemonsData = [];
+		let typesCollection = ko.observableArray([]);
+
+		function init(value) {
 			fetchPoKemonSpecies();
 		}
 
@@ -118,72 +101,168 @@ require([
 
 		function fetchPoKemonSpecies () {
 			h1('Phở Kémons Loading…');
+
 			fetch(apiBasePath + apiPokemonSpecies)
 				.then(response => response.json())
-				.then((data) => {
-					numPokemonsTotal = data.count;
-					fetchRandomPoKemons(numPokemons);
-				})
-				.catch((error) => {
-					console.error(error);
-				});
+				.then(data => fetchRandomPokemons(numPokemons, data.count))
+				.catch(error => console.error(error));
 		}
 
-		function fetchRandomPoKemons(n) {
+		function fetchRandomPokemons(count, total) {
+			let randomIDs = generateRandomIds(count, total);
+
+			for (let i = 1; i <= count; i++)
+				fetchPokemonById(i, randomIDs.shift());
+		}
+
+		function generateRandomIds (count, total) {
 			let id;
-			let randomIDs = [];
-			let numGeneratedIDs = 0;
+			let result = [];
 
-			while (numGeneratedIDs < n) {
-				id = Math.round((Math.random() * numPokemonsTotal));
+			while (result.length < count) {
+				id = Math.round((Math.random() * total));
 
-				if (randomIDs.indexOf(id) < 0) {
-					randomIDs.push(id);
-					numGeneratedIDs++;
+				if (result.indexOf(id) < 0) {
+					result.push(id);
 				}
 			}
 
-			for (let i = 1; i <= n; i++)
-				fetchPoKemonById(i, randomIDs.shift());
+			return result;
 		}
 
-		function fetchPoKemonById(sortNumber, id) {
+		function fetchPokemonById(sortNumber, id) {
 			fetch(apiBasePath + apiPokemon + '/' + id)
 				.then(response => response.json())
-				.then((data) => {
+				.then(data => {
 					numFetchedPokemons++;
 					data.sortNumber = sortNumber;
-					dataList[sortNumber - 1] = data;
-					numFetchedPokemons == numPokemons && onFetchedPokemons();
+					data.isChecked = false;
+					data.numMoves = numMoves(data);
+					data.typesList = typesList(data);
+					pokemonsData[sortNumber - 1] = data;
+					onPokemonFetched();
 				})
-				.catch((error) => {
-					console.error(error);
+				.catch(error => console.error(error));
+		}
+
+		function numMoves(data) {
+			return data.moves.length;
+		}
+
+		function typesList(data) {
+			let result = [];
+			data.types.forEach(element => result.push(element.type.name))
+			return result;
+		}
+
+		function generateTypesCollection() {
+			let typeExists;
+			let typesCollectionHelper;
+			typesCollection.removeAll();
+
+			pokemonsData.forEach(entry => {
+				entry.isChecked && entry.typesList.forEach(element => {
+					typeExists = false;
+
+					// observableArray is buggy and can't be used, within
+					// ko.utils.arrayForEach, see the bug:
+					// https://github.com/knockout/knockout/issues/2035
+					typesCollectionHelper = [...typesCollection()];
+					typesCollectionHelper.forEach(item => {
+						if (item.type === element) {
+							item.value++;
+							typeExists = true;
+						}
+					});
+
+					if (!typeExists) {
+						typesCollectionHelper.push({
+							type: element,
+							value: 1
+						});
+					}
+
+					typesCollection.removeAll();
+					typesCollectionHelper.forEach(item => typesCollection.push(item));
 				});
+			});
+			// <oj-chart> is buggy and does not refresh the visual
+			// representation of data properly. See typesCollection real value
+			// and compare to the visualisation.
+			console.info(typesCollection());
 		}
 
-		function onFetchedPokemons() {
-			h1('Phở Kémons');
-			ko.applyBindings(modelList, document.getElementById('list-container'));
-			// ko.applyBindings(modelList, document.getElementById('pie-container'));
+		function ListModel() {
+			this.columns = [
+				{ field: 'sortNumber',	headerText: '#'},
+				{ field: 'id',			headerText: 'ID'},
+				{ field: 'name',		headerText: 'Name'},
+				{ field: 'height',		headerText: 'Height'},
+				{ field: 'weight',		headerText: 'Weight'},
+				{ field: 'numMoves',	headerText: 'Number of Moves'},
+				{ field: 'typesList',	headerText: 'Type(s)'}
+			];
+
+			this.selectedItems = ko.observable({
+				row: new KeySet.KeySetImpl(),
+				column: new KeySet.KeySetImpl()
+			});
+
+			this.onSelectedChanged = function (event) {
+				let isAddAll = event.detail.value.row.isAddAll();
+				let previousValueRow = event.detail.previousValue.row;
+				let valueRow = event.detail.value.row;
+				let before = [0];
+				let after = [0];
+				let changed;
+				let element;
+
+				// The easiest way how to get a single changed item
+				let reducer = (a, c) => a + c;
+
+				if (isAddAll) {
+					previousValueRow.deletedValues && previousValueRow.deletedValues()
+						.forEach(element => before.push(element));
+					valueRow.deletedValues && valueRow.deletedValues()
+						.forEach(element => after.push(element));
+				} else {
+					previousValueRow.values && previousValueRow.values()
+						.forEach(element => before.push(element));
+					valueRow.values && valueRow.values()
+						.forEach(element => after.push(element));
+				}
+
+				if (before.length == after.length) {
+					pokemonsData.forEach(element => element.isChecked = isAddAll);
+				} else {
+					changed = Math.abs(before.reduce(reducer) - after.reduce(reducer));
+					element = pokemonsData[changed - 1]
+					element.isChecked = !element.isChecked;
+				}
+				generateTypesCollection();
+			}.bind(this);
+
+			this.dataprovider = new ArrayDataProvider(pokemonsData, {
+				keyAttributes: 'sortNumber'
+			});
 		}
 
-		function ModelPie() {
-			this.dataProviderPie = new ArrayDataProvider(dataPie, {keyAttributes: 'id'});
-			this.dataProviderList = new ArrayDataProvider(dataList, { keyAttributes: "id" });
-			this.selectorSelectedItems = new keySet.ObservableKeySet();
+		function PieModel() {
+			this.dataprovider = new ArrayDataProvider(typesCollection, {
+				keyAttributes: 'value'
+			});
 		}
 
-		function ModelList() {
-			this.dataProviderPie = new ArrayDataProvider(dataPie, {keyAttributes: 'id'});
-			this.dataProviderList = new ArrayDataProvider(dataList, { keyAttributes: "id" });
-			this.selectorSelectedItems = new keySet.ObservableKeySet();
+		function onPokemonFetched() {
+			if(numFetchedPokemons == numPokemons) {
+				h1('Phở Kémons');
+				generateTypesCollection();
+				ko.applyBindings(new ListModel(), listElement);
+				ko.applyBindings(new PieModel(), pieElement);
+
+			}
 		}
 
-		let modelList = new ModelList();
-		// let modelPie = new ModelPie();
-
-		Bootstrap.whenDocumentReady().then(() => {
-			init();
-		});
+		Bootstrap.whenDocumentReady().then(init);
 	}
 );

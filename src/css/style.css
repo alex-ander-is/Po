@@ -1,13 +1,35 @@
 body
 {
-	padding: 0 1rem;
+	min-width: 1380px;
+	padding: 0 20px;
+}
+
+#list-container
+{
+	float: left;
+	background: #fff;
 }
 
 #pie-container
 {
-	float: right;
-	margin-top: 0;
-	padding-top: 0;
-	width: 500px;
-	height: 400px;
+	float: left;
+	width: 400px;
+	margin-top: -55px;
+	margin-left: -48px;
+}
+
+.oj-table-data-cell
+{
+	width: 100px;
+}
+
+.oj-table-column-header-text
+{
+	font-size: 1.1rem;
+	line-height: 1.5rem;
+}
+
+.oj-table-body-row
+{
+	line-height: 1.5rem;
 }
